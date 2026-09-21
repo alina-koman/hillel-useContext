@@ -1,35 +1,165 @@
-# React + TypeScript + Vite
+# Демонстрація `useContext` у React
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Навчальний React-проєкт для демонстрації роботи `Context API` та хука
+`useContext`. Застосунок показує список учасників команди, вибраний профіль і
+можливість додавати користувачів до обраного.
 
-Currently, two official plugins are available:
+## Демо
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Готова версія застосунку доступна за посиланням:
 
-## React Compiler
+**[https://hillel-use-context.vercel.app/](https://hillel-use-context.vercel.app/)**
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Що реалізовано
 
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
+- Створено глобальний контекст застосунку для спільного стану.
+- Додано `AppProvider`, який зберігає список користувачів і вибраного
+  користувача.
+- Створено власний хук `useAppContext` для зручного доступу до контексту.
+- Реалізовано вибір користувача зі списку.
+- Профіль автоматично оновлюється після вибору іншого користувача.
+- Додано можливість додавати та видаляти користувача з обраного.
+- Показано, як `UserList` і `UserProfile` можуть працювати з одним станом без
+  передачі props через проміжні компоненти.
+- Додано адаптивні стилі для desktop-, tablet- і mobile-екранів.
+- Видалено стандартний Vite-шаблон і замінено його на власний інтерфейс.
 
-## Expanding the Oxlint configuration
+## Як працює `useContext`
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Стан застосунку описаний у `AppContext.tsx`. Компонент `AppProvider` обгортає
+весь інтерфейс і передає дочірнім компонентам такі значення:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- `users` — масив користувачів;
+- `selectedUser` — поточний вибраний користувач;
+- `selectUser(id)` — функція вибору користувача;
+- `toggleFavorite(id)` — функція зміни статусу обраного.
+
+Компоненти `UserList` і `UserProfile` викликають `useAppContext()` і отримують
+ці дані напряму з контексту. Завдяки цьому не потрібно передавати їх через
+`App` або інші проміжні компоненти.
+
+### Потік взаємодії
+
+1. `AppProvider` створює початковий стан зі списком користувачів.
+2. `UserList` відображає користувачів і викликає `selectUser()` після кліку.
+3. Контекст оновлює `selectedUser`.
+4. `UserProfile` отримує нове значення і перемальовується.
+5. Кнопка зірочки викликає `toggleFavorite()` та оновлює список і профіль.
+
+## Структура проєкту
+
+```text
+src/
+├── components/
+│   ├── App.tsx             # Основна розмітка сторінки
+│   ├── AppContext.tsx      # AppProvider і початкові дані користувачів
+│   ├── UserList.tsx        # Список користувачів
+│   ├── UserProfile.tsx     # Профіль вибраного користувача
+│   ├── app-context.ts      # Тип і об'єкт React-контексту
+│   └── useAppContext.ts    # Кастомний хук для доступу до контексту
+├── App.css                 # Стилі інтерфейсу та адаптивна верстка
+├── index.css               # Глобальні стилі та базове скидання
+└── main.tsx                # Точка входу React-застосунку
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Призначення основних файлів
+
+#### `AppContext.tsx`
+
+Містить тип `User`, початковий масив користувачів і компонент
+`AppProvider`. Усередині провайдера зберігаються:
+
+- список користувачів у `useState`;
+- ідентифікатор активного користувача;
+- функції для зміни стану;
+- мемоізоване значення контексту через `useMemo`.
+
+#### `app-context.ts`
+
+Містить `createContext` і тип `AppContextValue`. Контекст за замовчуванням
+має значення `null`, тому помилкове використання хука поза `AppProvider`
+виявляється одразу.
+
+#### `useAppContext.ts`
+
+Це обгортка над React-хуком `useContext`. Якщо компонент використовує хук
+поза `AppProvider`, він отримує зрозумілу помилку:
+
+```text
+useAppContext must be used inside AppProvider
+```
+
+#### `UserList.tsx`
+
+Відображає картки учасників команди. Активний користувач виділяється стилями,
+а обрані користувачі позначаються зірочкою.
+
+#### `UserProfile.tsx`
+
+Відображає детальну інформацію про вибраного користувача: ім'я, роль, email,
+локацію, опис і статус обраного.
+
+## Запуск локально
+
+### Вимоги
+
+- Node.js 18 або новіша версія;
+- npm.
+
+### Встановлення залежностей
+
+```bash
+npm install
+```
+
+### Запуск у режимі розробки
+
+```bash
+npm run dev
+```
+
+Після запуску відкрий адресу, яку покаже Vite, зазвичай:
+
+```text
+http://localhost:5173
+```
+
+### Перевірка lint
+
+```bash
+npm run lint
+```
+
+### Production-збірка
+
+```bash
+npm run build
+```
+
+### Перегляд production-збірки
+
+```bash
+npm run preview
+```
+
+## Технології
+
+- React 19;
+- TypeScript;
+- Vite;
+- React Context API;
+- `useContext`;
+- `useState`;
+- `useMemo`;
+- Oxlint;
+- адаптивний CSS без сторонніх UI-бібліотек.
+
+## Навчальна мета
+
+Цей приклад демонструє ситуацію, коли кілька компонентів мають працювати з
+одними й тими самими даними. Замість передачі великої кількості props через
+ієрархію компонентів використовується контекст React.
+
+Для невеликого застосунку це зручний спосіб організувати спільні дані. У
+більших проєктах контекст також можна використовувати для теми, мови,
+авторизації або налаштувань користувача.
